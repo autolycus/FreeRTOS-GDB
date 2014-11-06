@@ -11,20 +11,17 @@
 
 import gdb
 import pprint
-
-class StdTypes:
-  uint32_t = gdb.lookup_type("uint32_t")
-  uint16_t = gdb.lookup_type("uint16_t")
+from Types import StdTypes 
+from List import ListInspector 
 
 
-class QueueInspector: 
-  def __init__(self): 
-    """
-    """
-
-    pass
 
 class HandleRegistry: 
+  """ The FreeRTOS system can be configured with a table that 
+      associates a name with a QueueHandle_t.
+      This class can be used to access this table and 
+      label queue/mutex/semaphore/event groups 
+  """
   def __init__(self, regSymbol = "xQueueRegistry"):
     symbol, methodObj = gdb.lookup_symbol(regSymbol)
     self._registry = symbol.value()
@@ -53,96 +50,6 @@ class HandleRegistry:
         name = elem['pcQueueName'].string()
         print("%d: %3s %16s" % (i, h, name))
 
-class FRList: 
-  """ Wrapper for Inspecting FreeRTOS List_t Objects
-  """
-  def __init__(self, symbolStr):
-    """ Maintains a reference to a FreeRTOS List_t 
-        Object and provides tools for inspecting 
-        the values of the list. 
-        @param symbolStr User passes either a string of the 
-           symbol that we wish to monitor or a pointer reference
-           encoded as an integer (hex or otherwise). 
-           Example: FRList("xSuspendedTaskList") -> maps to the list of blocked tasks
-           Example: FRList(0x20000ae4)  -> pointer to a list object, user must
-              confirm that it is an actual List_t object otherwise, you 
-              will just get garbage           
-    """
-
-    ListType = gdb.lookup_type("List_t")
-    self._value = None
-
-    try: 
-      if ( symbolStr.type  == ListType):
-        self._value = symbolStr
-        return
-    except Exception as exc: 
-      pass 
-
-    symbol,methodObj = gdb.lookup_symbol(symbolStr)
-
-    if( symbol != None ): 
-      self._value = symbol.value()
-    else:
-      # We didn't find the symbol so maybe its a int pointer ? 
-      try: 
-        ListTypePtr = ListType.pointer()
-        addrInt = int(symbolStr, 0)
-        print("list Addr: %s, addrInt: %s" % (symbolStr, str(addrInt)))
-        ListValPtr = gdb.Value(addrInt).cast(ListTypePtr)
-        self._value = ListValPtr.dereference()
-      except Exception as exc:
-        print("Failed to Convert Passed Symbol to List_t: %s, %s" % (symbolStr, str(exc) ) )
-        return
-
-
-  def GetElements(self, CastTypeStr = None, startElem = 1 ):
-    """ Get the Elements of the list as an array of 
-        gdb.Value type objects. 
-        @param CastTypeStr string name of the type of object that 
-          we will cast the void *pvOwner elements of the list to. 
-          If None, we will simply cast to uint32_t and print these 
-          as hex values.
-    """
-    if ( self._value != None ):
-
-      CastType = None
-      if ( CastTypeStr != None):
-        try:
-          CastType = gdb.lookup_type(CastTypeStr).pointer()
-        except:
-          print("Failed to find type: %s" % CastTypeStr)
-
-      resp = [] 
-      items = [] 
-      numElems = self._value['uxNumberOfItems']
-      index = self._value['pxIndex']
-        
-      if ( startElem == 0 ):
-        curr = index
-      else:
-        curr = index['pxPrevious']
-
-      for i in range(0, numElems):
-        owner = curr['pvOwner']
-
-        if ( CastType != None ):
-          castObjPtr = owner.cast(CastType)
-          castObj = castObjPtr.dereference()
-          resp.append(castObj)
-        else:     
-          ownerUInt = owner.cast(StdTypes.uint32_t)      
-          resp.append(ownerUInt)
-          
-        itemVal = curr['xItemValue']
-        items.append( itemVal.cast(StdTypes.uint32_t))
-
-        curr = curr['pxPrevious']
-
-      return(resp, items)
-      
-    else:
-      raise ValueError("Invalid List Object - Possibly Failed to Initialize!")
     
 
 class Scheduler:
@@ -287,6 +194,6 @@ class ShowFRList(gdb.Command):
 
 
 ShowRegistry()
-ShowFRList()
+ShowList()
 ShowTaskList()
 ShowHandleName()

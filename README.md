@@ -22,9 +22,27 @@ Requirements:
 2) Need to be using FreeRTOS 8.0+. This code could probably be used with FreeRTOS
     version 7.0 or previous versions, but the current code doesn't support it.
 
+3) You need to use the Handle Registry for Queue info to be any use.
+    Note that this only works for Queue based objects and not 
+    for EventGroups 
+
 This code adds the following custom GDB commands: 
 
-- show FRList (symbol|address) [CastType]
+- show List-Handle (symbol|address) [CastType]
+	CastType is an optional argument that will cast all of the 
+	handles in a list to a particular type. 
 - show Task-List
 - show Handle-Registry
-- show Handle-Name   
+- show Handle-Name  (symbole|address) 
+- show Queue-Info [filter]
+   filter can be "queue","mutex","semaphore", "counting", "recursive"
+
+
+
+@TODO
+=====
+
+Currently, the EventGroup objects don't have an inspector. 
+Work in progress - ideal solution would like modify the struct
+of the Event Group to provide a similar piece of info that the 
+Queue handle does so that we could use the same registry.

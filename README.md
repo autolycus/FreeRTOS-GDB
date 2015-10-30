@@ -16,8 +16,9 @@ to inspect.
 ```
 	gdb> python print "Hello World" 
 ```
-	and get predictable results. If it throws an error - then you don't have 
-	python compiled in your version of GDB.
+
+and get predictable results. If it throws an error - then you don't have 
+python compiled in your version of GDB.
 
 2. Need to be using FreeRTOS 8.0+. This code could probably be used with FreeRTOS
     version 7.0 or previous versions, but the current code doesn't support it.
@@ -26,13 +27,18 @@ to inspect.
     Note that this only works for Queue based objects and not 
     for EventGroups 
 
+4. You need to put the FreeRTOS-GDB/src directory on your python path: 
+```
+	$> export PYTHONPATH=~/src/FreeRTOS-GDB/src/
+```
+
 How To Use: 
 ```
 $> gdb ./bin/program.elf 
 (gdb) c 
 Program runs on embedded device, sets up tasks, and queues 
 <Break>
-(gdb) source gdb/src/FreeRTOS.py 
+(gdb) source ~/FreeRTOS-GDB/src/FreeRTOS.py 
 (gdb) show Task-List
             Name PRI STCK
 Ready List {0}: Num Tasks: 1
@@ -53,7 +59,7 @@ Delayed {1}: Num Tasks: 5
          Tmr Svc   3  355 62254
        WLAN Task   1  205 13817
        Init Task   1  445 10015
-    CMCOLED Task   1  179  7105
+        LED Task   1  179  7105
          DMACOM1   1  265  7065
 Delayed {2}: Num Tasks: 0
 
@@ -109,6 +115,6 @@ This code adds the following custom GDB commands:
     files very well. 
 
 * Currently, the EventGroup objects don't have an inspector. 
-    Work in progress - ideal solution would like modify the struct
+    Work in progress - ideal solution would likely modify the struct
     of the Event Group to provide a similar piece of info that the 
     Queue handle does so that we could use the same registry.
